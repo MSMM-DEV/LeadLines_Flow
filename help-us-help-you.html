@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help Us Help You</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #1B5E54;
+      --primary-light: #2A7A6E;
+      --primary-dark: #0F3D35;
+      --accent: #D4944C;
+      --bg: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --text: #1A1A1A;
+      --text-muted: #6B6B6B;
+      --text-light: #9A9A9A;
+      --border: #E5E0DA;
+      --border-focus: #1B5E54;
+      --error: #C4392D;
+      --error-bg: #FDF2F1;
+      --success: #1B5E54;
+      --success-bg: #F0F7F6;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      background: var(--primary);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-bar .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .top-bar .brand {
+      font-family: 'DM Serif Display', serif;
+      color: #fff;
+      font-size: 1.05rem;
+      letter-spacing: 0.02em;
+    }
+
+    .page-wrap {
+      flex: 1;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 0 20px 40px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 56px 0 20px;
+      animation: fadeUp 0.6s ease-out both;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--success-bg);
+      color: var(--primary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 7vw, 2.8rem);
+      color: var(--primary-dark);
+      line-height: 1.15;
+      margin-bottom: 16px;
+      font-weight: 400;
+    }
+
+    .hero p {
+      color: var(--text-muted);
+      font-size: 1.02rem;
+      max-width: 380px;
+      margin: 0 auto 36px;
+      line-height: 1.65;
+    }
+
+    .qr-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.6s 0.15s ease-out both;
+    }
+
+    .qr-section .qr-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 18px;
+    }
+
+    .qr-holder {
+      display: inline-block;
+      background: #fff;
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--border);
+      margin-bottom: 18px;
+    }
+
+    .qr-holder canvas,
+    .qr-holder img {
+      display: block;
+    }
+
+    .qr-section .qr-hint {
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+
+    .divider-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 28px 0;
+      animation: fadeUp 0.6s 0.25s ease-out both;
+    }
+
+    .divider-row span {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    .divider-row::before,
+    .divider-row::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 14px 28px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-light);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary);
+      background: var(--success-bg);
+    }
+
+    .btn-back {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+
+    .btn-back:hover {
+      color: var(--text);
+    }
+
+    .btn-back svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.4s ease-out both;
+    }
+
+    .step-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.35rem;
+      color: var(--primary-dark);
+      margin-bottom: 6px;
+      font-weight: 400;
+    }
+
+    .step-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      line-height: 1.55;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .field input[type="text"],
+    .field input[type="email"],
+    .field input[type="tel"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(27, 94, 84, 0.1);
+    }
+
+    .field input.has-error {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(196, 57, 45, 0.08);
+    }
+
+    .field .error-msg {
+      color: var(--error);
+      font-size: 0.8rem;
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    .autocomplete-wrap {
+      position: relative;
+    }
+
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      z-index: 10;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .autocomplete-item {
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: var(--text);
+      transition: background 0.15s;
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.active {
+      background: var(--success-bg);
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .radio-option {
+      flex: 1;
+      position: relative;
+    }
+
+    .radio-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .radio-option .radio-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .radio-option input:checked+.radio-label {
+      border-color: var(--primary);
+      background: var(--success-bg);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .radio-option .radio-label:hover {
+      border-color: var(--primary-light);
+      color: var(--text);
+    }
+
+    .owner-card {
+      background: var(--success-bg);
+      border: 1px solid rgba(27, 94, 84, 0.15);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .owner-card-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    .owner-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(27, 94, 84, 0.08);
+      font-size: 0.88rem;
+    }
+
+    .owner-row:last-child {
+      border-bottom: none;
+    }
+
+    .owner-row .lbl {
+      color: var(--text-muted);
+      font-weight: 500;
+      min-width: 38%;
+      flex-shrink: 0;
+    }
+
+    .owner-row .val {
+      color: var(--primary-dark);
+      font-weight: 600;
+      text-align: right;
+      word-break: break-word;
+    }
+
+    .data-source {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-top: 8px;
+      text-align: right;
+      font-style: italic;
+    }
+
+    .note-box {
+      background: #FFFBF0;
+      border: 1px solid #E8D5A8;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-size: 0.84rem;
+      color: #7A6530;
+      line-height: 1.5;
+    }
+
+    .note-box a {
+      color: var(--primary);
+    }
+
+    .progress-wrap {
+      padding: 20px 0 4px;
+      animation: fadeUp 0.4s ease-out both;
+    }
+
+    .progress-bar-bg {
+      height: 4px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .progress-label {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      margin-top: 8px;
+      font-weight: 500;
+    }
+
+    .loader-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 0;
+      gap: 14px;
+    }
+
+    .loader {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .loader-text {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .success-page {
+      text-align: center;
+      padding: 48px 0 0;
+      animation: fadeUp 0.5s ease-out both;
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--success-bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .success-page h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      color: var(--primary-dark);
+      margin-bottom: 10px;
+      font-weight: 400;
+    }
+
+    .success-page p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 340px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 400px) {
+      .page-wrap {
+        padding: 0 16px 32px;
+      }
+
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    /* ═══════════════════════════════════════════════════════════════
+       PROPERTY LOOKUP — Orleans Parish Assessor via gis.nola.gov
+
+       Uses the public ArcGIS REST API that powers the Orleans Parish
+       Assessor's data on beacon.schneidercorp.com. No API key needed,
+       uses standard fetch with f=json (ArcGIS supports CORS).
+       ═══════════════════════════════════════════════════════════════ */
+
+    const STREET_SUFFIXES = [
+      [/\bSTREET\b/g, 'ST'], [/\bAVENUE\b/g, 'AVE'], [/\bBOULEVARD\b/g, 'BLVD'],
+      [/\bDRIVE\b/g, 'DR'], [/\bCOURT\b/g, 'CT'], [/\bPLACE\b/g, 'PL'],
+      [/\bLANE\b/g, 'LN'], [/\bROAD\b/g, 'RD'], [/\bCIRCLE\b/g, 'CIR'],
+      [/\bTERRACE\b/g, 'TER'], [/\bHIGHWAY\b/g, 'HWY'], [/\bPARKWAY\b/g, 'PKWY'],
+      [/\bEXPRESSWAY\b/g, 'EXPY'], [/\bCRESCENT\b/g, 'CRES'],
+    ];
+
+    function normalizeAddressForQuery(addr) {
+      let result = addr
+        .replace(/,?\s*(new\s+orleans|nola|orleans\s+parish|la|louisiana)\b[\s,]*/gi, ' ')
+        .replace(/\b7\d{4}\b/g, '')
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+      for (const [pattern, abbr] of STREET_SUFFIXES) {
+        result = result.replace(pattern, abbr);
+      }
+      return result;
+    }
+
+    async function lookupProperty(address) {
+      console.log('[lookupProperty] Called with address:', address);
+      try {
+        const normalized = normalizeAddressForQuery(address);
+        console.log('[lookupProperty] Normalized address:', normalized);
+        if (!normalized) { console.warn('[lookupProperty] Normalized address is empty, aborting'); return { found: false, message: 'Could not parse address.' }; }
+
+        const baseUrl = 'https://gis.nola.gov/arcgis/rest/services/GovernmentServices/LandBaseServices/MapServer/0/query';
+        const params = new URLSearchParams({
+          where: `SITEADDRESS LIKE '%${normalized}%'`,
+          outFields: '*',
+          returnGeometry: 'false',
+          resultRecordCount: '1',
+          f: 'json',
+        });
+
+        const fullUrl = baseUrl + '?' + params.toString();
+        console.log('[lookupProperty] Fetching URL:', fullUrl);
+        console.log('[lookupProperty] WHERE clause:', params.get('where'));
+        const resp = await fetch(fullUrl);
+        console.log('[lookupProperty] Response status:', resp.status, resp.statusText);
+        if (!resp.ok) throw new Error(`Server responded with ${resp.status}`);
+        const data = await resp.json();
+        console.log('[lookupProperty] ArcGIS raw response:', data);
+        console.log('[lookupProperty] Features count:', data.features ? data.features.length : 0);
+
+        if (data.error) {
+          console.error('[lookupProperty] ArcGIS returned error:', data.error);
+          throw new Error(data.error.message || 'ArcGIS query error');
+        }
+
+        if (!data.features || data.features.length === 0) {
+          console.warn('[lookupProperty] No features returned — property not found');
+          return { found: false, message: 'No property found at this address in Orleans Parish Assessor records.' };
+        }
+
+        const a = data.features[0].attributes;
+        console.log('[lookupProperty] First feature attributes:', a);
+        const owners = [a.OWNERNME1, a.OWNERNME2].filter(Boolean).join(' & ');
+        console.log('[lookupProperty] Found property! Owner:', owners, '| Parcel:', a.PARCELID);
+
+        return {
+          found: true,
+          ownerName: owners || null,
+          parcelId: a.PARCELID || null,
+          legalDescription: a.PRPRTYDSCRP || null,
+          propertyType: a.CLASSDSCRP || a.USEDSCRP || null,
+          yearBuilt: a.RESYRBLT || null,
+          livingArea: a.RESFLRAREA || null,
+          lotSqft: a.ASS_SQFT || null,
+          lotDimensions: a.ASS_DIMS || null,
+          landValue: a.LNDVALUE || null,
+          assessedValue: a.CNTASSDVAL || null,
+          taxableValue: a.CNTTXBLVAL || null,
+          taxBillId: a.TAXBILLID || null,
+          square: a.BLOCK || null,
+          lot: a.LOT || null,
+          source: 'Orleans Parish Assessor (via gis.nola.gov)',
+        };
+      } catch (err) {
+        console.error('[lookupProperty] Exception:', err);
+        return { found: false, message: `Lookup failed: ${err.message}` };
+      }
+    }
+
+
+    function formatOwnerRows(d) {
+      if (!d || !d.found) return [];
+      const rows = [];
+      const add = (l, v) => { if (v && v !== 'null' && v !== null && v !== 'N/A' && v !== 'None' && v !== 'none' && v !== '0' && v !== 0) rows.push({ label: l, value: String(v) }); };
+      const money = (n) => n ? '$' + Number(n).toLocaleString() : null;
+      add('Owner', d.ownerName);
+      add('Parcel ID', d.parcelId);
+      add('Legal Description', d.legalDescription);
+      add('Property Type', d.propertyType);
+      add('Year Built', d.yearBuilt);
+      add('Living Area', d.livingArea ? `${Number(d.livingArea).toLocaleString()} sq ft` : null);
+      add('Lot Size', d.lotSqft ? `${Number(d.lotSqft).toLocaleString()} sq ft` : null);
+      add('Lot Dimensions', d.lotDimensions);
+      add('Square / Lot', (d.square && d.lot) ? `${d.square} / ${d.lot}` : null);
+      add('Land Value', money(d.landValue));
+      add('Assessed Value', money(d.assessedValue));
+      add('Taxable Value', money(d.taxableValue));
+      add('Tax Bill ID', d.taxBillId);
+      return rows;
+    }
+
+
+    /* Address Validation */
+    const ORLEANS_ZIPS = new Set(['70112', '70113', '70114', '70115', '70116', '70117', '70118', '70119', '70121', '70122', '70123', '70124', '70125', '70126', '70127', '70128', '70129', '70130', '70131', '70139', '70140', '70141', '70142', '70143', '70145', '70146', '70148', '70150', '70151', '70152', '70153', '70154', '70156', '70157', '70158', '70159', '70160', '70161', '70162', '70163', '70164', '70165', '70166', '70167', '70170', '70172', '70174', '70175', '70176', '70177', '70178', '70179', '70181', '70182', '70184', '70185', '70186', '70187', '70189', '70190', '70195']);
+    const ORLEANS_KW = ['new orleans', 'nola', 'orleans parish'];
+    function validateOrleansAddress(addr) {
+      const lower = addr.toLowerCase().trim();
+      if (!lower) return { valid: false, error: 'Please enter an address.' };
+      const z = addr.match(/\b(7\d{4})\b/);
+      if (z && ORLEANS_ZIPS.has(z[1])) return { valid: true };
+      if (ORLEANS_KW.some(k => lower.includes(k))) return { valid: true };
+      if (z && !ORLEANS_ZIPS.has(z[1])) return { valid: false, error: 'This zip code is not in Orleans Parish.' };
+      return { valid: false, error: 'Please include a New Orleans zip code or city name so we can verify Orleans Parish.' };
+    }
+
+
+    /* Icons */
+    const ArrowLeft = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>;
+    const CheckIcon = () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>;
+    const ArrowRight = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>;
+
+
+    function App() {
+      const [page, setPage] = useState(window.location.hash === '#questionnaire' ? 'form' : 'home');
+      const qrRef = useRef(null);
+      const qrMade = useRef(false);
+
+      useEffect(() => {
+        const onHash = () => { if (window.location.hash === '#questionnaire') setPage('form'); };
+        window.addEventListener('hashchange', onHash);
+        return () => window.removeEventListener('hashchange', onHash);
+      }, []);
+      useEffect(() => {
+        if (page === 'home' && qrRef.current && !qrMade.current) {
+          qrMade.current = true;
+          new QRCode(qrRef.current, { text: window.location.href.split('#')[0] + '#questionnaire', width: 180, height: 180, colorDark: '#1B5E54', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
+        }
+      }, [page]);
+      const goToForm = () => { window.location.hash = 'questionnaire'; setPage('form'); window.scrollTo(0, 0); };
+      const goHome = () => { window.location.hash = ''; setPage('home'); qrMade.current = false; window.scrollTo(0, 0); };
+
+      return (
+        <div className="app-shell">
+          <div className="top-bar"><div className="dot"></div><div className="brand">Orleans Parish Community</div></div>
+          <div className="page-wrap">
+            {page === 'home' ? <HomePage qrRef={qrRef} goToForm={goToForm} /> : <Questionnaire goHome={goHome} />}
+          </div>
+        </div>
+      );
+    }
+
+
+    function HomePage({ qrRef, goToForm }) {
+      return (
+        <>
+          <div className="hero">
+            <div className="hero-badge">Community Outreach</div>
+            <h1>Help us<br />help you</h1>
+            <p>We're working to connect Orleans Parish property owners and renters with resources. Take a moment to share your info — it makes a difference.</p>
+          </div>
+          <div className="qr-section">
+            <div className="qr-label">Scan to begin</div>
+            <div className="qr-holder"><div ref={qrRef}></div></div>
+            <div className="qr-hint">Point your phone camera at the code above</div>
+          </div>
+          <div className="divider-row"><span>or</span></div>
+          <button className="btn btn-primary" onClick={goToForm} style={{ animationName: 'fadeUp', animationDuration: '0.6s', animationDelay: '0.35s', animationFillMode: 'both' }}>
+            Start Questionnaire <ArrowRight />
+          </button>
+        </>
+      );
+    }
+
+
+    function AddressInput({ value, onChange, onSubmit, error }) {
+      const [suggestions, setSuggestions] = useState([]);
+      const [showDropdown, setShowDropdown] = useState(false);
+      const debounceRef = useRef(null);
+
+      const fetchSuggestions = async (text) => {
+        if (text.length < 3) { setSuggestions([]); return; }
+        try {
+          const url = `https://gis.nola.gov/arcgis/rest/services/Locators/CompositeLocator/GeocodeServer/suggest?text=${encodeURIComponent(text)}&f=json`;
+          const resp = await fetch(url);
+          const data = await resp.json();
+          setSuggestions((data.suggestions || []).slice(0, 5));
+          setShowDropdown(true);
+        } catch { setSuggestions([]); }
+      };
+
+      const handleChange = (e) => {
+        const val = e.target.value;
+        onChange(val);
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+      };
+
+      const handleSelect = (text) => {
+        onChange(text);
+        setSuggestions([]);
+        setShowDropdown(false);
+      };
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') { setShowDropdown(false); }
+        if (e.key === 'Enter') { setShowDropdown(false); onSubmit(); }
+      };
+
+      const handleBlur = () => {
+        setTimeout(() => setShowDropdown(false), 200);
+      };
+
+      return (
+        <div className="autocomplete-wrap">
+          <input id="addr" type="text" placeholder="e.g. 720 Marengo St, New Orleans, LA 70115"
+            className={error ? 'has-error' : ''} value={value}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            autoComplete="off" />
+          {showDropdown && suggestions.length > 0 && (
+            <div className="autocomplete-list">
+              {suggestions.map((s, i) => (
+                <div key={i} className="autocomplete-item" onMouseDown={() => handleSelect(s.text)}>
+                  {s.text}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+
+    function Questionnaire({ goHome }) {
+      const [step, setStep] = useState(1);
+      const [address, setAddress] = useState('');
+      const [addrError, setAddrError] = useState('');
+      const [ownership, setOwnership] = useState('');
+      const [propertyData, setPropertyData] = useState(null);
+      const [ownerRows, setOwnerRows] = useState([]);
+      const [lookingUp, setLookingUp] = useState(false);
+      const [signingAuth, setSigningAuth] = useState('');
+      const [contact, setContact] = useState({ firstName: '', lastName: '', email: '', phone: '' });
+      const [ownerContact, setOwnerContact] = useState({ firstName: '', lastName: '', email: '', phone: '' });
+      const [submitting, setSubmitting] = useState(false);
+      const [done, setDone] = useState(false);
+      const [fillerInfo, setFillerInfo] = useState({ firstName: '', lastName: '', email: '', phone: '' });
+      const lookupPromiseRef = useRef(null);
+      const lookupAddressRef = useRef('');
+
+      const totalSteps = ownership === 'own' ? 5 : 4;
+      const progress = done ? 100 : Math.round((step / totalSteps) * 80);
+
+      const handleAddressContinue = () => {
+        console.log('[handleAddressContinue] Address entered:', address);
+        const r = validateOrleansAddress(address);
+        console.log('[handleAddressContinue] Validation result:', r);
+        if (!r.valid) { setAddrError(r.error); return; }
+        setAddrError('');
+        if (address !== lookupAddressRef.current) {
+          console.log('[handleAddressContinue] Background prefetch STARTED for:', address);
+          lookupAddressRef.current = address;
+          setPropertyData(null);
+          setOwnerRows([]);
+          lookupPromiseRef.current = lookupProperty(address);
+        } else {
+          console.log('[handleAddressContinue] Address unchanged, reusing existing prefetch');
+        }
+        setStep(2);
+      };
+
+      const handleFillerContinue = () => {
+        if (!fillerInfo.firstName || !fillerInfo.lastName || !fillerInfo.email || !fillerInfo.phone) return;
+        setStep(3);
+      };
+
+      const handleOwnershipContinue = async () => {
+        if (!ownership) return;
+        console.log('[handleOwnershipContinue] Ownership:', ownership);
+        if (ownership === 'own') {
+          setStep(4);
+          setLookingUp(true);
+          const hasPrefetch = !!lookupPromiseRef.current;
+          console.log('[handleOwnershipContinue] Has prefetched promise:', hasPrefetch);
+          console.log('[handleOwnershipContinue] Awaiting property data...');
+          try {
+            const data = await (lookupPromiseRef.current || lookupProperty(address));
+            console.log('[handleOwnershipContinue] Property data received:', data);
+            console.log('[handleOwnershipContinue] data.found:', data?.found);
+            setPropertyData(data);
+            const rows = formatOwnerRows(data);
+            console.log('[handleOwnershipContinue] Formatted owner rows:', rows.length, 'rows');
+            setOwnerRows(rows);
+          } catch (err) {
+            console.error('[handleOwnershipContinue] Exception awaiting lookup:', err);
+            setPropertyData({ found: false, message: 'An unexpected error occurred.' });
+          }
+          setLookingUp(false);
+          console.log('[handleOwnershipContinue] Done, lookingUp set to false');
+        } else { setStep(4); }
+      };
+
+      useEffect(() => {
+        if (signingAuth === 'yes') {
+          setContact(prev => ({
+            firstName: prev.firstName || fillerInfo.firstName,
+            lastName: prev.lastName || fillerInfo.lastName,
+            email: prev.email || fillerInfo.email,
+            phone: prev.phone || fillerInfo.phone,
+          }));
+        }
+      }, [signingAuth]);
+
+      const handleSave = () => {
+        setSubmitting(true);
+        const payload = {
+          address, ownership, fillerInfo, timestamp: new Date().toISOString(),
+          ...(ownership === 'own' && { assessorData: propertyData, signingAuthority: signingAuth }),
+          ...(ownership === 'own' && signingAuth === 'yes' && { contact }),
+          ...(ownership === 'own' && signingAuth === 'no' && { ownerContact }),
+          ...(ownership === 'rent' && { ownerContact }),
+        };
+        console.log('📋 Saved:', JSON.stringify(payload, null, 2));
+        setTimeout(() => { setSubmitting(false); setDone(true); }, 800);
+      };
+
+      const canSave = () => {
+        if (ownership === 'rent') return ownerContact.firstName && ownerContact.lastName && ownerContact.email && ownerContact.phone;
+        if (signingAuth === 'yes') return contact.firstName && contact.lastName && contact.email && contact.phone;
+        if (signingAuth === 'no') return ownerContact.firstName && ownerContact.lastName && ownerContact.email && ownerContact.phone;
+        return false;
+      };
+
+      if (done) return (
+        <div className="success-page">
+          <div className="success-icon"><CheckIcon /></div>
+          <h2>Thank you!</h2>
+          <p>Your information has been saved. We'll be in touch soon with resources and next steps.</p>
+          <button className="btn btn-outline" style={{ marginTop: 28 }} onClick={goHome}>Back to Home</button>
+        </div>
+      );
+
+      const hasOwner = propertyData?.ownerName && !["null", "none", "n/a", ""].includes(String(propertyData.ownerName).toLowerCase());
+
+      return (
+        <>
+          <div className="progress-wrap">
+            <button className="btn-back" onClick={() => step === 1 ? goHome() : setStep(s => s - 1)}>
+              <ArrowLeft /> {step === 1 ? 'Home' : 'Back'}
+            </button>
+            <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: progress + '%' }} /></div>
+            <div className="progress-label">Step {step} of {totalSteps}</div>
+          </div>
+
+          {step === 1 && (
+            <div className="card" key="s1">
+              <div className="step-title">Property Address</div>
+              <div className="step-desc">Enter the street address of the property in Orleans Parish, Louisiana.</div>
+              <div className="field">
+                <label htmlFor="addr">Street Address</label>
+                <AddressInput value={address}
+                  onChange={val => { setAddress(val); if (addrError) setAddrError(''); }}
+                  onSubmit={handleAddressContinue}
+                  error={addrError} />
+                {addrError && <div className="error-msg">{addrError}</div>}
+              </div>
+              <button className="btn btn-primary" style={{ marginTop: 12 }} onClick={handleAddressContinue} disabled={!address.trim()}>
+                Continue <ArrowRight />
+              </button>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="card" key="s2">
+              <div className="step-title">Your Information</div>
+              <div className="step-desc">Tell us who is filling out this form.</div>
+              <ContactForm values={fillerInfo} onChange={setFillerInfo} />
+              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={handleFillerContinue}
+                disabled={!fillerInfo.firstName || !fillerInfo.lastName || !fillerInfo.email || !fillerInfo.phone}>
+                Continue <ArrowRight />
+              </button>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="card" key="s3">
+              <div className="step-title">Property Ownership</div>
+              <div className="step-desc">Do you own or rent the property at <strong>{address}</strong>?</div>
+              <div className="radio-group">
+                <label className="radio-option">
+                  <input type="radio" name="own" value="own" checked={ownership === 'own'} onChange={() => setOwnership('own')} />
+                  <span className="radio-label">I Own It</span>
+                </label>
+                <label className="radio-option">
+                  <input type="radio" name="own" value="rent" checked={ownership === 'rent'} onChange={() => setOwnership('rent')} />
+                  <span className="radio-label">I Rent</span>
+                </label>
+              </div>
+              <button className="btn btn-primary" style={{ marginTop: 20 }} onClick={handleOwnershipContinue} disabled={!ownership}>
+                Continue <ArrowRight />
+              </button>
+            </div>
+          )}
+
+          {step === 4 && ownership === 'own' && (
+            <div className="card" key="s4own">
+              <div className="step-title">Property Records</div>
+              <div className="step-desc">We searched public records for this address.</div>
+
+              {lookingUp ? (
+                <div className="loader-wrap">
+                  <div className="loader"></div>
+                  <div className="loader-text">Searching Orleans Parish Assessor records…</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-light)', marginTop: 2 }}>This usually takes a few seconds</div>
+                </div>
+              ) : propertyData && propertyData.found ? (
+                <>
+                  <div className="owner-card">
+                    <div className="owner-card-title">Property Record — Public Data</div>
+                    {ownerRows.length > 0 ? ownerRows.map((row, i) => (
+                      <div className="owner-row" key={i}>
+                        <span className="lbl">{row.label}</span>
+                        <span className="val">{row.value}</span>
+                      </div>
+                    )) : propertyData.rawText ? (
+                      <div style={{ fontSize: '0.85rem', color: 'var(--primary-dark)', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 250, overflow: 'auto' }}>{propertyData.rawText.substring(0, 800)}</div>
+                    ) : (
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Property data could not be displayed.</p>
+                    )}
+                    {propertyData.source && <div className="data-source">Source: {propertyData.source}</div>}
+                  </div>
+
+                  {!hasOwner && (
+                    <div className="note-box">
+                      <strong>Owner name not found.</strong> You can look it up at{' '}
+                      <a href="https://beacon.schneidercorp.com/Application.aspx?AppID=7&LayerID=1&PageTypeID=2&PageID=84" target="_blank" rel="noopener">Orleans Parish Assessor (Beacon)</a>
+                      {propertyData.parcelId && <span> using Parcel ID: <strong>{propertyData.parcelId}</strong></span>}.
+                    </div>
+                  )}
+
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: 8 }}>
+                      Do you have signing authority for this property?
+                    </label>
+                    <div className="radio-group">
+                      <label className="radio-option">
+                        <input type="radio" name="auth" value="yes" checked={signingAuth === 'yes'} onChange={() => setSigningAuth('yes')} />
+                        <span className="radio-label">Yes</span>
+                      </label>
+                      <label className="radio-option">
+                        <input type="radio" name="auth" value="no" checked={signingAuth === 'no'} onChange={() => setSigningAuth('no')} />
+                        <span className="radio-label">No</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {signingAuth === 'yes' && <ContactForm title="Your Contact Information" values={contact} onChange={setContact} />}
+                  {signingAuth === 'no' && <ContactForm title="Property Owner / Landlord Contact" subtitle="Please provide contact info for someone with signing authority." values={ownerContact} onChange={setOwnerContact} />}
+                  {signingAuth && (
+                    <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={handleSave} disabled={!canSave() || submitting}>
+                      {submitting ? 'Saving…' : 'Submit'}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div style={{ padding: '16px 0' }}>
+                  <div className="owner-card" style={{ background: 'var(--error-bg)', borderColor: 'rgba(196,57,45,0.15)' }}>
+                    <p style={{ color: 'var(--error)', fontSize: '0.9rem', margin: 0 }}>
+                      {propertyData?.message || 'Property not found. Please verify the address.'}
+                    </p>
+                  </div>
+                  <button className="btn btn-outline" style={{ marginTop: 12 }} onClick={() => setStep(1)}>Edit Address</button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 4 && ownership === 'rent' && (
+            <div className="card" key="s4rent">
+              <div className="step-title">Landlord / Owner Contact</div>
+              <div className="step-desc">Please provide the contact information for the property owner or landlord.</div>
+              <ContactForm values={ownerContact} onChange={setOwnerContact} />
+              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={handleSave} disabled={!canSave() || submitting}>
+                {submitting ? 'Saving…' : 'Submit'}
+              </button>
+            </div>
+          )}
+        </>
+      );
+    }
+
+
+    function ContactForm({ title, subtitle, values, onChange }) {
+      const update = (k, v) => onChange({ ...values, [k]: v });
+      return (
+        <div style={{ animation: 'fadeUp 0.35s ease-out both' }}>
+          {title && <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary)', marginBottom: subtitle ? 2 : 12, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{title}</label>}
+          {subtitle && <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>{subtitle}</p>}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field"><label>First Name</label><input type="text" placeholder="Jane" value={values.firstName} onChange={e => update('firstName', e.target.value)} /></div>
+            <div className="field"><label>Last Name</label><input type="text" placeholder="Doe" value={values.lastName} onChange={e => update('lastName', e.target.value)} /></div>
+          </div>
+          <div className="field"><label>Email</label><input type="email" placeholder="jane@example.com" value={values.email} onChange={e => update('email', e.target.value)} /></div>
+          <div className="field"><label>Phone</label><input type="tel" placeholder="(504) 555-0123" value={values.phone} onChange={e => update('phone', e.target.value)} /></div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+
+</html>
