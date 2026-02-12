@@ -13,6 +13,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <style>
     *,
     *::before,
@@ -366,6 +368,13 @@
       background: var(--success-bg);
     }
 
+    .property-map {
+      height: 220px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      margin-bottom: 16px;
+    }
+
     .radio-group {
       display: flex;
       gap: 10px;
@@ -637,7 +646,8 @@
         const params = new URLSearchParams({
           where: `SITEADDRESS LIKE '%${normalized}%'`,
           outFields: '*',
-          returnGeometry: 'false',
+          returnGeometry: 'true',
+          outSR: '4326',
           resultRecordCount: '1',
           f: 'json',
         });
@@ -662,10 +672,22 @@
           return { found: false, message: 'No property found at this address in Orleans Parish Assessor records.' };
         }
 
-        const a = data.features[0].attributes;
+        const feature = data.features[0];
+        const a = feature.attributes;
         console.log('[lookupProperty] First feature attributes:', a);
         const owners = [a.OWNERNME1, a.OWNERNME2].filter(Boolean).join(' & ');
         console.log('[lookupProperty] Found property! Owner:', owners, '| Parcel:', a.PARCELID);
+
+        let lat = null, lng = null, polygonCoords = null;
+        if (feature.geometry && feature.geometry.rings && feature.geometry.rings.length > 0) {
+          const ring = feature.geometry.rings[0];
+          const sumX = ring.reduce((s, pt) => s + pt[0], 0);
+          const sumY = ring.reduce((s, pt) => s + pt[1], 0);
+          lng = sumX / ring.length;
+          lat = sumY / ring.length;
+          polygonCoords = ring.map(pt => [pt[1], pt[0]]);
+          console.log('[lookupProperty] Centroid:', lat, lng, '| Polygon points:', ring.length);
+        }
 
         return {
           found: true,
@@ -683,6 +705,7 @@
           taxBillId: a.TAXBILLID || null,
           square: a.BLOCK || null,
           lot: a.LOT || null,
+          lat, lng, polygonCoords,
           source: 'Orleans Parish Assessor (via gis.nola.gov)',
         };
       } catch (err) {
@@ -783,6 +806,33 @@
           </button>
         </>
       );
+    }
+
+
+    function PropertyMap({ lat, lng, polygonCoords, address }) {
+      const mapRef = useRef(null);
+      const mapInstanceRef = useRef(null);
+
+      useEffect(() => {
+        if (!mapRef.current || !lat || !lng) return;
+        if (mapInstanceRef.current) return;
+
+        const map = L.map(mapRef.current).setView([lat, lng], 18);
+        mapInstanceRef.current = map;
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+          attribution: 'Esri', maxZoom: 20,
+        }).addTo(map);
+
+        if (polygonCoords) {
+          L.polygon(polygonCoords, { color: '#1B5E54', weight: 2, fillOpacity: 0.15 }).addTo(map);
+        }
+        L.marker([lat, lng]).addTo(map).bindPopup(address);
+
+        return () => { map.remove(); mapInstanceRef.current = null; };
+      }, [lat, lng]);
+
+      return <div ref={mapRef} className="property-map"></div>;
     }
 
 
@@ -1044,6 +1094,11 @@
                     )}
                     {propertyData.source && <div className="data-source">Source: {propertyData.source}</div>}
                   </div>
+
+                  {propertyData.lat && propertyData.lng && (
+                    <PropertyMap lat={propertyData.lat} lng={propertyData.lng}
+                      polygonCoords={propertyData.polygonCoords} address={address} />
+                  )}
 
                   {!hasOwner && (
                     <div className="note-box">
