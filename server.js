@@ -7,7 +7,6 @@ const docusign = require('docusign-esign');
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
 
 // ─── Supabase Configuration ──────────────────────────────────────────────────
 
@@ -52,15 +51,18 @@ async function getAccessToken() {
     return cachedToken;
   }
 
-  const keyPath = path.resolve(DOCUSIGN_CONFIG.privateKeyPath);
-  if (!fs.existsSync(keyPath)) {
-    throw new Error(
-      `RSA private key not found at ${keyPath}. ` +
-      'See docusign-setup.md for instructions on generating and placing the key.'
-    );
+  // Support private key from env var (Vercel) or file (local dev)
+  let privateKey = process.env.DOCUSIGN_PRIVATE_KEY;
+  if (!privateKey) {
+    const keyPath = path.resolve(DOCUSIGN_CONFIG.privateKeyPath);
+    if (!fs.existsSync(keyPath)) {
+      throw new Error(
+        `RSA private key not found at ${keyPath} and DOCUSIGN_PRIVATE_KEY env var not set. ` +
+        'See docusign-setup.md for instructions on generating and placing the key.'
+      );
+    }
+    privateKey = fs.readFileSync(keyPath, 'utf8');
   }
-
-  const privateKey = fs.readFileSync(keyPath, 'utf8');
 
   // Build JWT assertion per DocuSign JWT Grant spec
   const now = Math.floor(Date.now() / 1000);
@@ -387,18 +389,25 @@ app.get('/api/docusign/callback', async (req, res) => {
   res.redirect(`/#signing-${event}`);
 });
 
-// ─── Start Server ─────────────────────────────────────────────────────────────
+// ─── Export for Vercel Serverless ─────────────────────────────────────────────
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  if (!isDocuSignConfigured()) {
-    console.log('DocuSign is NOT configured — signing features will be unavailable.');
-    console.log('See docusign-setup.md for configuration instructions.');
-  } else if (!isTemplateConfigured()) {
-    console.log('DocuSign credentials configured, but DOCUSIGN_TEMPLATE_ID is not set.');
-    console.log('See docusign-setup.md for template creation instructions.');
-  } else {
-    console.log('DocuSign fully configured (template: ' + DOCUSIGN_CONFIG.templateId + ').');
-  }
-});
+module.exports = app;
+
+// ─── Start Server (local dev only) ───────────────────────────────────────────
+
+if (require.main === module) {
+  app.use(express.static(path.join(__dirname)));
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    if (!isDocuSignConfigured()) {
+      console.log('DocuSign is NOT configured — signing features will be unavailable.');
+      console.log('See docusign-setup.md for configuration instructions.');
+    } else if (!isTemplateConfigured()) {
+      console.log('DocuSign credentials configured, but DOCUSIGN_TEMPLATE_ID is not set.');
+      console.log('See docusign-setup.md for template creation instructions.');
+    } else {
+      console.log('DocuSign fully configured (template: ' + DOCUSIGN_CONFIG.templateId + ').');
+    }
+  });
+}
