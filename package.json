@@ -4,6 +4,7 @@
   "scripts": {
     "start": "node server.js",
     "create-table": "psql \"$DATABASE_URL\" -f scripts/create-table.sql",
+    "create-submissions-table": "psql \"$DATABASE_URL\" -f scripts/create-submissions-table.sql",
     "download-parcels": "node scripts/download-parcels.js"
   },
   "dependencies": {

@@ -996,13 +996,32 @@
       const handleSave = async () => {
         setSubmitting(true);
         const payload = {
-          address, ownership, fillerInfo, timestamp: new Date().toISOString(),
+          address, ownership, fillerInfo,
           ...(ownership === 'own' && { assessorData: propertyData, signingAuthority: signingAuth }),
           ...(ownership === 'own' && signingAuth === 'yes' && { contact }),
           ...(ownership === 'own' && signingAuth === 'no' && { ownerContact }),
           ...(ownership === 'rent' && { ownerContact }),
         };
-        console.log('📋 Saved:', JSON.stringify(payload, null, 2));
+        console.log('📋 Submitting:', JSON.stringify(payload, null, 2));
+
+        // Save submission to server
+        let submissionId = null;
+        try {
+          const saveResp = await fetch('/api/submissions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (saveResp.ok) {
+            const saveData = await saveResp.json();
+            submissionId = saveData.id;
+            console.log('[Submission] Saved, id:', submissionId);
+          } else {
+            console.error('[Submission] Save failed:', saveResp.status);
+          }
+        } catch (err) {
+          console.error('[Submission] Save error:', err);
+        }
 
         // If signing authority = yes, create envelope and redirect to DocuSign
         if (signingAuth === 'yes') {
@@ -1017,6 +1036,7 @@
                 propertyAddress: address,
                 parcelId: propertyData?.parcelId || null,
                 ownerName: propertyData?.ownerName || null,
+                submissionId,
               }),
             });
 
