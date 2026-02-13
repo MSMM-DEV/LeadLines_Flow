@@ -601,6 +601,16 @@
       }
     }
 
+    .signing-error {
+      background: var(--error-bg);
+      border: 1px solid rgba(196, 57, 45, 0.15);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-bottom: 16px;
+      color: var(--error);
+      font-size: 0.9rem;
+    }
+
     @media (max-width: 400px) {
       .page-wrap {
         padding: 0 16px 32px;
@@ -620,12 +630,18 @@
     const { useState, useEffect, useRef } = React;
 
     /* ═══════════════════════════════════════════════════════════════
-       PROPERTY LOOKUP — Orleans Parish Assessor via gis.nola.gov
+       PROPERTY LOOKUP — Orleans Parish Assessor via Supabase
 
-       Uses the public ArcGIS REST API that powers the Orleans Parish
-       Assessor's data on beacon.schneidercorp.com. No API key needed,
-       uses standard fetch with f=json (ArcGIS supports CORS).
+       Pre-loaded parcel data from gis.nola.gov ArcGIS, stored in
+       Supabase for fast lookups. Public anon key (read-only, public data).
        ═══════════════════════════════════════════════════════════════ */
+
+    const SUPABASE_URL = 'https://clcufcjifbvpbtsczkmx.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsY3VmY2ppZmJ2cGJ0c2N6a214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzMTg0MjUsImV4cCI6MjA2Njg5NDQyNX0.peSxA-RStQrPYFdWyewjg_9wA-YQ73ZU4IRXoknTfUA';
+    const SUPABASE_HEADERS = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    };
 
     const STREET_SUFFIXES = [
       [/\bSTREET\b/g, 'ST'], [/\bAVENUE\b/g, 'AVE'], [/\bBOULEVARD\b/g, 'BLVD'],
@@ -654,73 +670,43 @@
       try {
         const normalized = normalizeAddressForQuery(address);
         console.log('[lookupProperty] Normalized address:', normalized);
-        if (!normalized) { console.warn('[lookupProperty] Normalized address is empty, aborting'); return { found: false, message: 'Could not parse address.' }; }
+        if (!normalized) return { found: false, message: 'Could not parse address.' };
 
-        const baseUrl = 'https://gis.nola.gov/arcgis/rest/services/GovernmentServices/LandBaseServices/MapServer/0/query';
-        const params = new URLSearchParams({
-          where: `SITEADDRESS LIKE '%${normalized}%'`,
-          outFields: '*',
-          returnGeometry: 'true',
-          outSR: '4326',
-          resultRecordCount: '1',
-          f: 'json',
-        });
+        const url = `${SUPABASE_URL}/rest/v1/noleadnola_parcels?site_address=ilike.*${encodeURIComponent(normalized)}*&limit=1`;
+        console.log('[lookupProperty] Querying Supabase:', url);
+        const resp = await fetch(url, { headers: SUPABASE_HEADERS });
+        if (!resp.ok) throw new Error(`Supabase responded with ${resp.status}`);
+        const rows = await resp.json();
+        console.log('[lookupProperty] Rows returned:', rows.length);
 
-        const fullUrl = baseUrl + '?' + params.toString();
-        console.log('[lookupProperty] Fetching URL:', fullUrl);
-        console.log('[lookupProperty] WHERE clause:', params.get('where'));
-        const resp = await fetch(fullUrl);
-        console.log('[lookupProperty] Response status:', resp.status, resp.statusText);
-        if (!resp.ok) throw new Error(`Server responded with ${resp.status}`);
-        const data = await resp.json();
-        console.log('[lookupProperty] ArcGIS raw response:', data);
-        console.log('[lookupProperty] Features count:', data.features ? data.features.length : 0);
-
-        if (data.error) {
-          console.error('[lookupProperty] ArcGIS returned error:', data.error);
-          throw new Error(data.error.message || 'ArcGIS query error');
-        }
-
-        if (!data.features || data.features.length === 0) {
-          console.warn('[lookupProperty] No features returned — property not found');
+        if (!rows.length) {
           return { found: false, message: 'No property found at this address in Orleans Parish Assessor records.' };
         }
 
-        const feature = data.features[0];
-        const a = feature.attributes;
-        console.log('[lookupProperty] First feature attributes:', a);
-        const owners = [a.OWNERNME1, a.OWNERNME2].filter(Boolean).join(' & ');
-        console.log('[lookupProperty] Found property! Owner:', owners, '| Parcel:', a.PARCELID);
-
-        let lat = null, lng = null, polygonCoords = null;
-        if (feature.geometry && feature.geometry.rings && feature.geometry.rings.length > 0) {
-          const ring = feature.geometry.rings[0];
-          const sumX = ring.reduce((s, pt) => s + pt[0], 0);
-          const sumY = ring.reduce((s, pt) => s + pt[1], 0);
-          lng = sumX / ring.length;
-          lat = sumY / ring.length;
-          polygonCoords = ring.map(pt => [pt[1], pt[0]]);
-          console.log('[lookupProperty] Centroid:', lat, lng, '| Polygon points:', ring.length);
-        }
+        const r = rows[0];
+        const owners = [r.owner_name1, r.owner_name2].filter(Boolean).join(' & ');
+        console.log('[lookupProperty] Found! Owner:', owners, '| Parcel:', r.parcel_id);
 
         return {
           found: true,
           ownerName: owners || null,
-          parcelId: a.PARCELID || null,
-          legalDescription: a.PRPRTYDSCRP || null,
-          propertyType: a.CLASSDSCRP || a.USEDSCRP || null,
-          yearBuilt: a.RESYRBLT || null,
-          livingArea: a.RESFLRAREA || null,
-          lotSqft: a.ASS_SQFT || null,
-          lotDimensions: a.ASS_DIMS || null,
-          landValue: a.LNDVALUE || null,
-          assessedValue: a.CNTASSDVAL || null,
-          taxableValue: a.CNTTXBLVAL || null,
-          taxBillId: a.TAXBILLID || null,
-          square: a.BLOCK || null,
-          lot: a.LOT || null,
-          lat, lng, polygonCoords,
-          source: 'Orleans Parish Assessor (via gis.nola.gov)',
+          parcelId: r.parcel_id || null,
+          legalDescription: r.property_desc || null,
+          propertyType: r.property_type || null,
+          yearBuilt: r.year_built || null,
+          livingArea: r.living_area || null,
+          lotSqft: r.lot_sqft || null,
+          lotDimensions: r.lot_dims || null,
+          landValue: r.land_value || null,
+          assessedValue: r.assessed_value || null,
+          taxableValue: r.taxable_value || null,
+          taxBillId: r.tax_bill_id || null,
+          square: r.block || null,
+          lot: r.lot || null,
+          lat: r.centroid_lat,
+          lng: r.centroid_lng,
+          polygonCoords: r.polygon_coords,
+          source: 'Orleans Parish Assessor (via Supabase)',
         };
       } catch (err) {
         console.error('[lookupProperty] Exception:', err);
@@ -759,9 +745,21 @@
 
 
     function App() {
-      const [page, setPage] = useState(window.location.hash === '#questionnaire' ? 'form' : 'home');
+      // Detect signing callback hash (e.g. #signing-signing_complete)
+      const initialHash = window.location.hash;
+      const signingResult = initialHash.startsWith('#signing-') ? initialHash.replace('#signing-', '') : null;
+      const initialPage = signingResult ? 'form' : (initialHash === '#questionnaire' ? 'form' : 'home');
+
+      const [page, setPage] = useState(initialPage);
       const qrRef = useRef(null);
       const qrMade = useRef(false);
+
+      // Clean up the signing hash from the URL
+      useEffect(() => {
+        if (signingResult) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      }, []);
 
       useEffect(() => {
         const onHash = () => { if (window.location.hash === '#questionnaire') setPage('form'); };
@@ -781,7 +779,7 @@
         <div className="app-shell">
           <div className="top-bar"><img src="Logos/SWBNO_logo.svg" alt="SWBNO" className="nav-logo" /><div className="brand">Orleans Parish Community</div></div>
           <div className="page-wrap">
-            {page === 'home' ? <HomePage qrRef={qrRef} goToForm={goToForm} /> : <Questionnaire goHome={goHome} />}
+            {page === 'home' ? <HomePage qrRef={qrRef} goToForm={goToForm} /> : <Questionnaire goHome={goHome} signingResult={signingResult} />}
           </div>
         </div>
       );
@@ -849,10 +847,12 @@
       const fetchSuggestions = async (text) => {
         if (text.length < 3) { setSuggestions([]); return; }
         try {
-          const url = `https://gis.nola.gov/arcgis/rest/services/Locators/CompositeLocator/GeocodeServer/suggest?text=${encodeURIComponent(text)}&f=json`;
-          const resp = await fetch(url);
-          const data = await resp.json();
-          setSuggestions((data.suggestions || []).slice(0, 5));
+          const normalized = text.toUpperCase().replace(/[^A-Z0-9\s]/g, '').trim();
+          if (!normalized) { setSuggestions([]); return; }
+          const url = `${SUPABASE_URL}/rest/v1/noleadnola_parcels?site_address=ilike.*${encodeURIComponent(normalized)}*&select=site_address&limit=5`;
+          const resp = await fetch(url, { headers: SUPABASE_HEADERS });
+          const rows = await resp.json();
+          setSuggestions(rows.map(r => ({ text: r.site_address })));
           setShowDropdown(true);
         } catch { setSuggestions([]); }
       };
@@ -901,8 +901,8 @@
     }
 
 
-    function Questionnaire({ goHome }) {
-      const [step, setStep] = useState(1);
+    function Questionnaire({ goHome, signingResult }) {
+      const [step, setStep] = useState(signingResult ? 0 : 1);
       const [address, setAddress] = useState('');
       const [addrError, setAddrError] = useState('');
       const [ownership, setOwnership] = useState('');
@@ -913,13 +913,19 @@
       const [contact, setContact] = useState({ firstName: '', lastName: '', email: '', phone: '' });
       const [ownerContact, setOwnerContact] = useState({ firstName: '', lastName: '', email: '', phone: '' });
       const [submitting, setSubmitting] = useState(false);
-      const [done, setDone] = useState(false);
+      const [done, setDone] = useState(signingResult === 'signing_complete');
+      const [signingComplete] = useState(signingResult === 'signing_complete');
       const [fillerInfo, setFillerInfo] = useState({ firstName: '', lastName: '', email: '', phone: '' });
+      const [signingError, setSigningError] = useState(
+        signingResult && signingResult !== 'signing_complete'
+          ? { decline: 'You declined to sign the document.', exception: 'An error occurred during signing.', ttl_expired: 'The signing session expired.', cancel: 'Signing was cancelled.' }[signingResult] || 'Signing ended unexpectedly.'
+          : null
+      );
       const lookupPromiseRef = useRef(null);
       const lookupAddressRef = useRef('');
       const contactSectionRef = useRef(null);
 
-      const totalSteps = ownership === 'own' ? 5 : 4;
+      const totalSteps = 4;
       const progress = done ? 100 : Math.round((step / totalSteps) * 80);
 
       const handleAddressContinue = () => {
@@ -987,7 +993,7 @@
         }
       }, [signingAuth]);
 
-      const handleSave = () => {
+      const handleSave = async () => {
         setSubmitting(true);
         const payload = {
           address, ownership, fillerInfo, timestamp: new Date().toISOString(),
@@ -997,6 +1003,41 @@
           ...(ownership === 'rent' && { ownerContact }),
         };
         console.log('📋 Saved:', JSON.stringify(payload, null, 2));
+
+        // If signing authority = yes, create envelope and redirect to DocuSign
+        if (signingAuth === 'yes') {
+          try {
+            setSigningError(null);
+            const resp = await fetch('/api/docusign/create-envelope', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                signerEmail: contact.email,
+                signerName: `${contact.firstName} ${contact.lastName}`,
+                propertyAddress: address,
+                parcelId: propertyData?.parcelId || null,
+                ownerName: propertyData?.ownerName || null,
+              }),
+            });
+
+            if (!resp.ok) {
+              const errData = await resp.json().catch(() => ({}));
+              throw new Error(errData.error || `Server error (${resp.status})`);
+            }
+
+            const { url } = await resp.json();
+            // Redirect to DocuSign for signing — they'll redirect back when done
+            window.location.href = url;
+            return;
+          } catch (err) {
+            console.error('[DocuSign] Error:', err);
+            setSigningError(err.message);
+            setSubmitting(false);
+            return;
+          }
+        }
+
+        // Default path (no signing required)
         setTimeout(() => { setSubmitting(false); setDone(true); }, 800);
       };
 
@@ -1007,11 +1048,26 @@
         return false;
       };
 
+      // Signing error page (returned from DocuSign with a non-success result)
+      if (signingError && step === 0) return (
+        <div className="success-page">
+          <div className="success-icon" style={{ background: 'var(--error-bg)' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+          </div>
+          <h2>Signing Not Completed</h2>
+          <p>{signingError}</p>
+          <button className="btn btn-primary" style={{ marginTop: 28 }} onClick={goHome}>Back to Home</button>
+        </div>
+      );
+
       if (done) return (
         <div className="success-page">
           <div className="success-icon"><CheckIcon /></div>
           <h2>Thank you!</h2>
-          <p>Your information has been saved. We'll be in touch soon with resources and next steps.</p>
+          <p>{signingComplete
+            ? 'Your document has been signed and your information saved. We\'ll be in touch soon with next steps for the Lead Reduction Program.'
+            : 'Your information has been saved. We\'ll be in touch soon with resources and next steps.'
+          }</p>
           <button className="btn btn-outline" style={{ marginTop: 28 }} onClick={goHome}>Back to Home</button>
         </div>
       );
@@ -1097,71 +1153,76 @@
                   const nameMatches = hasOwner && firstUpper && lastUpper && (ownerNameUpper.includes(firstUpper) || ownerNameUpper.includes(lastUpper));
                   const nameChecked = hasOwner && firstUpper && lastUpper;
                   return (
-                  <>
-                    {nameChecked && (
-                      nameMatches ? (
-                        <div style={{ background: '#E8F5E9', border: '1px solid #81C784', borderRadius: 'var(--radius-sm)', padding: '10px 14px', marginBottom: 16, fontSize: '0.88rem', color: '#2E7D32', fontWeight: 600 }}>
-                          Property Records confirm you own the property
-                        </div>
-                      ) : (
-                        <div style={{ background: 'var(--error-bg)', border: '1px solid #E57373', borderRadius: 'var(--radius-sm)', padding: '10px 14px', marginBottom: 16, fontSize: '0.88rem', color: 'var(--error)', fontWeight: 600 }}>
-                          Property records do not match name provided
-                        </div>
-                      )
-                    )}
-
-                    <div style={{ marginBottom: 16 }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: 8 }}>
-                        Do you have signing authority for this property?
-                      </label>
-                      <div className="radio-group">
-                        <label className="radio-option">
-                          <input type="radio" name="auth" value="yes" checked={signingAuth === 'yes'} onChange={() => setSigningAuth('yes')} />
-                          <span className="radio-label">Yes</span>
-                        </label>
-                        <label className="radio-option">
-                          <input type="radio" name="auth" value="no" checked={signingAuth === 'no'} onChange={() => setSigningAuth('no')} />
-                          <span className="radio-label">No</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="owner-card">
-                      <div className="owner-card-title">Property Owner — Public Record</div>
-                      {ownerRows.length > 0 ? ownerRows.map((row, i) => (
-                        <div className="owner-row" key={i}>
-                          <span className="lbl">{row.label}</span>
-                          <span className="val">{row.value}</span>
-                        </div>
-                      )) : (
-                        <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Owner data could not be displayed.</p>
+                    <>
+                      {nameChecked && (
+                        nameMatches ? (
+                          <div style={{ background: '#E8F5E9', border: '1px solid #81C784', borderRadius: 'var(--radius-sm)', padding: '10px 14px', marginBottom: 16, fontSize: '0.88rem', color: '#2E7D32', fontWeight: 600 }}>
+                            Property Records confirm you own the property
+                          </div>
+                        ) : (
+                          <div style={{ background: 'var(--error-bg)', border: '1px solid #E57373', borderRadius: 'var(--radius-sm)', padding: '10px 14px', marginBottom: 16, fontSize: '0.88rem', color: 'var(--error)', fontWeight: 600 }}>
+                            Property records do not match name provided
+                          </div>
+                        )
                       )}
-                      {propertyData.source && <div className="data-source">Source: {propertyData.source}</div>}
-                    </div>
 
-                    {propertyData.lat && propertyData.lng && (
-                      <PropertyMap lat={propertyData.lat} lng={propertyData.lng}
-                        polygonCoords={propertyData.polygonCoords} address={address} />
-                    )}
-
-                    {!hasOwner && (
-                      <div className="note-box">
-                        <strong>Owner name not found.</strong> You can look it up at{' '}
-                        <a href="https://beacon.schneidercorp.com/Application.aspx?AppID=7&LayerID=1&PageTypeID=2&PageID=84" target="_blank" rel="noopener">Orleans Parish Assessor (Beacon)</a>
-                        {propertyData.parcelId && <span> using Parcel ID: <strong>{propertyData.parcelId}</strong></span>}.
+                      <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: 8 }}>
+                          Do you have signing authority for this property?
+                        </label>
+                        <div className="radio-group">
+                          <label className="radio-option">
+                            <input type="radio" name="auth" value="yes" checked={signingAuth === 'yes'} onChange={() => setSigningAuth('yes')} />
+                            <span className="radio-label">Yes</span>
+                          </label>
+                          <label className="radio-option">
+                            <input type="radio" name="auth" value="no" checked={signingAuth === 'no'} onChange={() => setSigningAuth('no')} />
+                            <span className="radio-label">No</span>
+                          </label>
+                        </div>
                       </div>
-                    )}
 
-                    {signingAuth && (
-                      <div ref={contactSectionRef}>
-                        {signingAuth === 'yes' && <ContactForm title="Your Contact Information" values={contact} onChange={setContact} />}
-                        {signingAuth === 'no' && <ContactForm title="Property Owner / Landlord Contact" subtitle="Please provide contact info for someone with signing authority." values={ownerContact} onChange={setOwnerContact} />}
-                        <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={handleSave} disabled={!canSave() || submitting}>
-                          {submitting ? 'Saving…' : 'Submit'}
-                        </button>
+                      <div className="owner-card">
+                        <div className="owner-card-title">Property Owner — Public Record</div>
+                        {ownerRows.length > 0 ? ownerRows.map((row, i) => (
+                          <div className="owner-row" key={i}>
+                            <span className="lbl">{row.label}</span>
+                            <span className="val">{row.value}</span>
+                          </div>
+                        )) : (
+                          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Owner data could not be displayed.</p>
+                        )}
+                        {propertyData.source && <div className="data-source">Source: {propertyData.source}</div>}
                       </div>
-                    )}
-                  </>
+
+                      {propertyData.lat && propertyData.lng && (
+                        <PropertyMap lat={propertyData.lat} lng={propertyData.lng}
+                          polygonCoords={propertyData.polygonCoords} address={address} />
+                      )}
+
+                      {!hasOwner && (
+                        <div className="note-box">
+                          <strong>Owner name not found.</strong> You can look it up at{' '}
+                          <a href="https://beacon.schneidercorp.com/Application.aspx?AppID=7&LayerID=1&PageTypeID=2&PageID=84" target="_blank" rel="noopener">Orleans Parish Assessor (Beacon)</a>
+                          {propertyData.parcelId && <span> using Parcel ID: <strong>{propertyData.parcelId}</strong></span>}.
+                        </div>
+                      )}
+
+                      {signingAuth && (
+                        <div ref={contactSectionRef}>
+                          {signingAuth === 'yes' && <ContactForm title="Your Contact Information" values={contact} onChange={setContact} />}
+                          {signingAuth === 'no' && <ContactForm title="Property Owner / Landlord Contact" subtitle="Please provide contact info for someone with signing authority." values={ownerContact} onChange={setOwnerContact} />}
+
+                          {signingError && (
+                            <div className="signing-error">{signingError}</div>
+                          )}
+
+                          <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={handleSave} disabled={!canSave() || submitting}>
+                            {submitting ? 'Preparing…' : signingAuth === 'yes' ? 'Sign Document' : 'Submit'} {signingAuth === 'yes' && !submitting && <ArrowRight />}
+                          </button>
+                        </div>
+                      )}
+                    </>
                   );
                 })()
               ) : (

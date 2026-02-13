@@ -1,0 +1,16 @@
+{
+  "name": "leadlines-flow",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "create-table": "psql \"$DATABASE_URL\" -f scripts/create-table.sql",
+    "download-parcels": "node scripts/download-parcels.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2",
+    "docusign-esign": "^8",
+    "dotenv": "^16",
+    "express": "^4",
+    "jsonwebtoken": "^9"
+  }
+}

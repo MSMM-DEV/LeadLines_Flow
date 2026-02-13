@@ -4,38 +4,77 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**LeadLines_Flow** is a single-page community outreach web application for Orleans Parish, New Orleans. It collects property and contact information from property owners and renters through a multi-step questionnaire. The entire app lives in one self-contained HTML file (`help-us-help-you.html`).
+**LeadLines_Flow** is a single-page community outreach web application for Orleans Parish, New Orleans. It collects property and contact information from property owners and renters through a multi-step questionnaire, then presents a DocuSign embedded signing flow for authorization documents. The frontend lives in one self-contained HTML file (`index.html`); the backend is an Express server (`server.js`) that handles DocuSign JWT auth and envelope creation.
 
 ## Architecture
 
-- **Single-file app**: All HTML, CSS, and React JSX live in `help-us-help-you.html` — no build system, no bundler, no package.json
-- **Runtime dependencies** (loaded via CDN): React 18, ReactDOM, Babel Standalone (for in-browser JSX transpilation), qrcodejs
-- **Orleans Parish Assessor integration**: The `lookupProperty()` function queries the public ArcGIS REST API at `gis.nola.gov` (same data that powers beacon.schneidercorp.com). Uses JSONP to bypass CORS — no API key, no backend needed. Returns owner name, parcel ID, assessed values, tax info, etc. in <1 second.
-
-## Key Components (all in `help-us-help-you.html`)
-
-- `App` — Router-like root component; switches between `HomePage` and `Questionnaire` via hash routing (`#questionnaire`)
-- `HomePage` — Landing page with QR code generation and CTA button
-- `Questionnaire` — Multi-step form (address → ownership → property records/contact info → submit)
-- `ContactForm` — Reusable contact info form (first/last name, email, phone)
-- `jsonpFetch(url)` — JSONP helper for cross-origin requests to ArcGIS
-- `normalizeAddressForQuery(addr)` — Strips city/state/zip and uppercases for ArcGIS SITEADDRESS queries
-- `lookupProperty(address)` — Async function that queries gis.nola.gov ArcGIS API for Orleans Parish Assessor data
-- `validateOrleansAddress(addr)` — Validates that an address is within Orleans Parish using zip codes and keyword matching
+- **Single-file frontend**: All HTML, CSS, and React JSX in `index.html` — no build system, no bundler. Uses Babel Standalone for in-browser JSX transpilation.
+- **CDN dependencies**: React 18, ReactDOM, Babel Standalone, qrcodejs, Leaflet, DocuSign Focused View SDK (`js-d.docusign.com/bundle.js`)
+- **Express backend** (`server.js`): Serves static files and exposes DocuSign API endpoints. Uses JWT Grant auth with RSA keypair. Runs on port 3000.
+- **Property data**: ~162K Orleans Parish parcels pre-loaded from gis.nola.gov ArcGIS into Supabase (`noleadnola_parcels` table). Frontend queries Supabase REST API directly using the anon key (public data, read-only via RLS).
+- **Supabase project**: `clcufcjifbvpbtsczkmx.supabase.co`
 
 ## How to Run
 
-Open `help-us-help-you.html` directly in a browser, or serve it with any static file server:
+Frontend only (no DocuSign signing):
 ```
 python3 -m http.server 8000
-# then visit http://localhost:8000/help-us-help-you.html
 ```
+
+Full app with DocuSign signing:
+```
+npm install
+npm start          # Express on http://localhost:3000
+```
+
+Re-download parcel data from ArcGIS:
+```
+npm install
+NODE_TLS_REJECT_UNAUTHORIZED=0 npm run download-parcels
+# Resume from a specific OBJECTID: NODE_TLS_REJECT_UNAUTHORIZED=0 node scripts/download-parcels.js 102150000
+```
+
+Create/reset Supabase table:
+```
+npm run create-table   # requires DATABASE_URL in .env
+```
+
+## Key Components (all in `index.html`)
+
+- `App` — Root component; hash-based routing (`#questionnaire` → Questionnaire, else → HomePage)
+- `Questionnaire` — Multi-step form: address → filler info → ownership → property records/DocuSign signing → contact/submit. Step count changes based on ownership (owner: 5 steps, renter: 4 steps).
+- `AddressInput` — Autocomplete that queries Supabase with ILIKE on `site_address`, debounced
+- `PropertyMap` — Leaflet map rendering parcel polygon from pre-computed `polygon_coords`
+- `ContactForm` — Reusable contact info form (first/last name, email, phone)
+
+## Backend API Endpoints (`server.js`)
+
+- `GET /api/docusign/config` — Returns `{ configured, integrationKey }` for Focused View SDK init
+- `POST /api/docusign/create-envelope` — Creates DocuSign envelope from template, returns embedded signing URL. Body: `{ signerEmail, signerName, propertyAddress, parcelId?, ownerName? }`
+- `GET /api/docusign/callback` — Post-signing redirect; posts message to parent window
+
+## Data Flow
+
+1. User enters address → `AddressInput` queries Supabase for autocomplete suggestions
+2. `lookupProperty()` fetches full parcel record from Supabase → displays owner info, assessed values, map
+3. `normalizeAddressForQuery()` strips city/state/zip and converts suffixes (STREET→ST, AVENUE→AVE, etc.)
+4. `validateOrleansAddress()` checks against hardcoded `ORLEANS_ZIPS` Set and keyword matching
+5. For owners: frontend calls `/api/docusign/create-envelope` → server creates JWT, gets access token, creates envelope from template → returns signing URL → DocuSign Focused View renders inline
+
+## Environment Variables (`.env`)
+
+Required for parcel download and DB operations:
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`
+
+Required for DocuSign (see `docusign-setup.md` for full setup):
+- `DOCUSIGN_INTEGRATION_KEY`, `DOCUSIGN_USER_ID`, `DOCUSIGN_ACCOUNT_ID`, `DOCUSIGN_TEMPLATE_ID`
+- `DOCUSIGN_PRIVATE_KEY_PATH` (default: `config/docusign-private.key`)
 
 ## Important Notes
 
-- Property lookup uses the public ArcGIS REST API at `gis.nola.gov/arcgis/rest/services/GovernmentServices/LandBaseServices/MapServer/0/query` — no API key needed
-- JSONP is used instead of fetch to bypass CORS restrictions from the browser
-- The ArcGIS `SITEADDRESS` field requires uppercase addresses without city/state/zip
-- Orleans Parish zip code validation uses a hardcoded `ORLEANS_ZIPS` Set
-- Form submission currently logs to console only (`console.log`) — no backend persistence
-- The note box links to beacon.schneidercorp.com for users who want full assessor details
+- The Supabase anon key is hardcoded in `index.html` — this is intentional (read-only access to public government data via RLS policy)
+- Form submission currently logs to console only (`console.log`) — no backend persistence yet
+- DocuSign uses demo/sandbox environment (`account-d.docusign.com`, `demo.docusign.net`). See `docusign-setup.md` "Production Notes" for go-live changes.
+- The DocuSign template must have a recipient role named exactly `signer` and uses `clientUserId: '1000'` for embedded signing
+- The ArcGIS server at gis.nola.gov has SSL cert issues (requires `NODE_TLS_REJECT_UNAUTHORIZED=0`) and is very slow for bulk downloads. The download script uses OBJECTID range queries (not offset pagination) for speed.
+- OBJECTID range: 102,079,250 — 102,241,234
