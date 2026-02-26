@@ -136,8 +136,9 @@
     }
 
     .map-container {
-      flex: 1;
+      flex: 6;
       position: relative;
+      min-width: 0;
     }
 
     .map-container #ticketMap {
@@ -147,8 +148,9 @@
 
     /* ─── Side Panel ──────────────────────────────────────── */
     .side-panel {
-      width: 420px;
-      flex-shrink: 0;
+      flex: 4;
+      min-width: 360px;
+      max-width: 600px;
       background: var(--bg-card);
       border-left: 1px solid var(--border);
       display: flex;
@@ -202,6 +204,69 @@
       transform: translateY(-1px);
     }
 
+    /* ─── Filter Bar ──────────────────────────────────────── */
+    .filter-bar {
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+
+    .filter-select {
+      padding: 6px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-xs);
+      font-family: inherit;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235A6577' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 24px;
+    }
+
+    .filter-select:focus {
+      border-color: var(--border-focus);
+    }
+
+    .filter-select.active-filter {
+      border-color: var(--primary);
+      color: var(--primary);
+      background-color: var(--info-bg);
+    }
+
+    .filter-clear {
+      padding: 6px 10px;
+      border: none;
+      border-radius: var(--radius-xs);
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--error);
+      background: var(--error-bg);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: none;
+    }
+
+    .filter-clear.visible {
+      display: inline-block;
+    }
+
+    .filter-clear:hover {
+      background: #f5d5d2;
+    }
+
     /* ─── Ticket List ─────────────────────────────────────── */
     .ticket-list {
       flex: 1;
@@ -245,6 +310,14 @@
 
     .status-dot.resolved {
       background: var(--success);
+    }
+
+    .status-dot.closed {
+      background: #546E7A;
+    }
+
+    .status-dot.escalated {
+      background: #C62828;
     }
 
     .ticket-item .ticket-info {
@@ -312,6 +385,40 @@
     .ticket-status-badge.resolved {
       background: var(--success-bg);
       color: var(--success);
+    }
+
+    .ticket-status-badge.closed {
+      background: #ECEFF1;
+      color: #546E7A;
+    }
+
+    .ticket-status-badge.escalated {
+      background: #FCE4EC;
+      color: #C62828;
+    }
+
+    .urgency-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .urgency-badge.high {
+      background: #FDE8E8;
+      color: #C4392D;
+    }
+
+    .urgency-badge.medium {
+      background: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .urgency-badge.low {
+      background: #E8F5E9;
+      color: #2E7D32;
     }
 
     /* ─── Chat / Detail View ──────────────────────────────── */
@@ -412,6 +519,72 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    /* ─── Case Actions ────────────────────────────────────── */
+    .case-actions {
+      display: flex;
+      gap: 8px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+
+    .case-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 14px;
+      border-radius: var(--radius-xs);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1.5px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+    }
+
+    .case-action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    .case-action-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .case-action-btn.close-case {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .case-action-btn.close-case:hover {
+      background: var(--success-bg);
+    }
+
+    .case-action-btn.escalate-case {
+      border-color: var(--warning);
+      color: var(--warning);
+    }
+
+    .case-action-btn.escalate-case:hover {
+      background: var(--warning-bg);
+    }
+
+    .case-action-btn.closed-badge {
+      border-color: var(--success);
+      background: var(--success-bg);
+      color: var(--success);
+      cursor: default;
+    }
+
+    .case-action-btn.closed-badge:hover {
+      transform: none;
+      box-shadow: none;
     }
 
     /* ─── Chat Messages ───────────────────────────────────── */
@@ -968,10 +1141,11 @@
         id: 'CMP-2026-0041',
         address: '6269 COLBERT ST',
         customer: 'Stuart Seiler',
-        message: 'The investigator dug up my backyard during the lead pipe inspection, but it was never filled back to its original form. There are visible holes in the grass and the yard is uneven. I would appreciate it if this could be fixed as soon as possible.',
+        message: 'The investigator dug up my frontyard during the lead pipe inspection, but it was never filled back to its original form. There are visible holes in the grass and the yard is uneven. I would appreciate it if this could be fixed as soon as possible.',
         photo: 'photos/IMG_7549.jpg',
         date: '2026-02-26T11:00:00',
         status: 'in-progress',
+        urgency: 'high',
         lat: 29.9335,
         lng: -90.0308,
         assignedTo: 'Mike Reynolds',
@@ -980,7 +1154,7 @@
           {
             type: 'customer',
             sender: 'Stuart Seiler',
-            text: 'The investigator dug up my backyard during the lead pipe inspection, but it was never filled back to its original form. There are visible holes in the grass and the yard is uneven. I would appreciate it if this could be fixed as soon as possible.',
+            text: 'The investigator dug up my frontyard during the lead pipe inspection, but it was never filled back to its original form. There are visible holes in the grass and the yard is uneven. I would appreciate it if this could be fixed as soon as possible.',
             photo: 'photos/IMG_7549.jpg',
             time: '11:00 AM',
           },
@@ -997,7 +1171,7 @@
             variant: 'ai',
             title: 'AI Photo Analysis',
             icon: 'ai',
-            text: 'The uploaded image shows a residential backyard where ground has been excavated and not properly restored. There are two visible holes in the grass area near what appears to be a utility access point. The surrounding lawn shows signs of heavy equipment use with soil displacement and uneven terrain.',
+            text: 'The uploaded image shows a residential frontyard where ground has been excavated and not properly restored. There are two visible holes in the grass area near what appears to be a utility access point. The surrounding lawn shows signs of heavy equipment use with soil displacement and uneven terrain.',
             photo: 'photos/IMG_7549.jpg',
             time: '11:01 AM',
           },
@@ -1020,7 +1194,7 @@
           {
             type: 'contractor',
             sender: 'Mike Reynolds',
-            text: "Hello Stuart, I'm extremely sorry about the condition of your backyard. I've reviewed the photos and the AI analysis. I can come back today to fill the holes and restore the yard to its original condition. How does 2:00 PM work for you?",
+            text: "Hello Stuart, I'm extremely sorry about the condition of your frontyard. I've reviewed the photos and the AI analysis. I can come back today to fill the holes and restore the yard to its original condition. How does 2:00 PM work for you?",
             time: '11:08 AM',
           },
         ],
@@ -1033,6 +1207,7 @@
         photo: null,
         date: '2026-02-25T09:30:00',
         status: 'open',
+        urgency: 'medium',
         lat: 29.9680,
         lng: -90.1020,
         assignedTo: null,
@@ -1062,6 +1237,7 @@
         photo: null,
         date: '2026-02-24T14:15:00',
         status: 'resolved',
+        urgency: 'high',
         lat: 29.9260,
         lng: -90.0820,
         assignedTo: 'Carlos Martinez',
@@ -1127,6 +1303,7 @@
         photo: null,
         date: '2026-02-25T08:00:00',
         status: 'in-progress',
+        urgency: 'medium',
         lat: 29.9710,
         lng: -90.0640,
         assignedTo: 'Tom Henderson',
@@ -1178,6 +1355,7 @@
         photo: null,
         date: '2026-02-23T16:45:00',
         status: 'open',
+        urgency: 'low',
         lat: 30.0050,
         lng: -90.0200,
         assignedTo: null,
@@ -1216,6 +1394,9 @@
     const IconForward = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>;
     const IconConnect = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 12h8M12 8v8" /><circle cx="12" cy="12" r="10" /></svg>;
     const IconPin = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>;
+    const IconClose = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5" /></svg>;
+    const IconEscalate = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>;
+    const IconFilter = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" /></svg>;
 
 
     /* ═══════════════════════════════════════════════════════════
@@ -1302,7 +1483,8 @@
           if (!t.lat || !t.lng) return;
 
           const isSelected = t.id === selectedId;
-          const statusColor = t.status === 'resolved' ? '#2E7D32' : t.status === 'in-progress' ? '#00235c' : '#E65100';
+          const statusColors = { resolved: '#2E7D32', closed: '#546E7A', 'in-progress': '#00235c', escalated: '#C62828', open: '#E65100' };
+          const statusColor = statusColors[t.status] || '#E65100';
 
           const icon = L.divIcon({
             className: '',
@@ -1393,7 +1575,7 @@
     /* ═══════════════════════════════════════════════════════════
        CHAT VIEW (Ticket Detail)
        ═══════════════════════════════════════════════════════════ */
-    function ChatView({ ticket, onBack }) {
+    function ChatView({ ticket, onBack, onClose, onEscalate }) {
       const messagesEndRef = useRef(null);
       const [inputMsg, setInputMsg] = useState('');
 
@@ -1407,6 +1589,9 @@
       };
 
       const getInitials = (name) => name.split(' ').map(w => w[0]).join('').toUpperCase();
+
+      const isClosed = ticket.status === 'closed' || ticket.status === 'resolved';
+      const isEscalated = ticket.status === 'escalated';
 
       return (
         <div className="chat-view">
@@ -1424,6 +1609,7 @@
             <div className="chat-header-meta">
               <span className="chat-meta-item"><IconUser /> {ticket.customer}</span>
               <span className="chat-meta-item"><IconClock /> {formatDate(ticket.date)}</span>
+              {ticket.urgency && <span className={`urgency-badge ${ticket.urgency}`}>{ticket.urgency}</span>}
               {ticket.assignedTo && (
                 <span className="assigned-badge">
                   <span className="assigned-avatar">{getInitials(ticket.assignedTo)}</span>
@@ -1431,6 +1617,27 @@
                 </span>
               )}
             </div>
+          </div>
+
+          <div className="case-actions">
+            {isClosed ? (
+              <span className="case-action-btn closed-badge"><IconClose /> Case Closed</span>
+            ) : (
+              <>
+                <button className="case-action-btn close-case" onClick={() => onClose(ticket.id)}>
+                  <IconClose /> Close Case
+                </button>
+                {isEscalated ? (
+                  <span className="case-action-btn" style={{ borderColor: '#C62828', color: '#C62828', background: '#FCE4EC', cursor: 'default' }}>
+                    <IconEscalate /> Escalated
+                  </span>
+                ) : (
+                  <button className="case-action-btn escalate-case" onClick={() => onEscalate(ticket.id)}>
+                    <IconEscalate /> Escalate Case
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           <div className="chat-messages">
@@ -1542,22 +1749,83 @@
     /* ═══════════════════════════════════════════════════════════
        TICKET LIST
        ═══════════════════════════════════════════════════════════ */
-    function TicketList({ tickets, selectedId, onSelect, onNewTicket }) {
+    function TicketList({ tickets, selectedId, onSelect, onNewTicket, filters, onFilterChange }) {
       const formatDate = (d) => {
         const dt = new Date(d);
         return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' at ' +
           dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
       };
 
+      // Get unique contractors from tickets
+      const contractors = [...new Set(tickets.map(t => t.assignedTo).filter(Boolean))];
+
+      // Check if any filter is active
+      const hasFilters = filters.status || filters.urgency || filters.contractor || filters.dateRange;
+
+      // Apply filters
+      let filtered = tickets;
+      if (filters.status) filtered = filtered.filter(t => t.status === filters.status);
+      if (filters.urgency) filtered = filtered.filter(t => t.urgency === filters.urgency);
+      if (filters.contractor) filtered = filtered.filter(t => t.assignedTo === filters.contractor);
+      if (filters.dateRange) {
+        const now = new Date();
+        filtered = filtered.filter(t => {
+          const d = new Date(t.date);
+          if (filters.dateRange === 'today') return d.toDateString() === now.toDateString();
+          if (filters.dateRange === '3days') return (now - d) <= 3 * 86400000;
+          if (filters.dateRange === 'week') return (now - d) <= 7 * 86400000;
+          return true;
+        });
+      }
+
       return (
         <>
           <div className="panel-header">
             <h2>Complaints</h2>
-            <span className="ticket-count">{tickets.length} tickets</span>
+            <span className="ticket-count">{filtered.length} of {tickets.length}</span>
             <button className="btn-new-ticket" onClick={onNewTicket}><IconPlus /> New</button>
           </div>
+          <div className="filter-bar">
+            <select className={`filter-select ${filters.status ? 'active-filter' : ''}`}
+              value={filters.status} onChange={e => onFilterChange('status', e.target.value)}>
+              <option value="">All Statuses</option>
+              <option value="open">Open</option>
+              <option value="in-progress">In Progress</option>
+              <option value="escalated">Escalated</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+            <select className={`filter-select ${filters.urgency ? 'active-filter' : ''}`}
+              value={filters.urgency} onChange={e => onFilterChange('urgency', e.target.value)}>
+              <option value="">All Urgency</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <select className={`filter-select ${filters.contractor ? 'active-filter' : ''}`}
+              value={filters.contractor} onChange={e => onFilterChange('contractor', e.target.value)}>
+              <option value="">All Contractors</option>
+              {contractors.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select className={`filter-select ${filters.dateRange ? 'active-filter' : ''}`}
+              value={filters.dateRange} onChange={e => onFilterChange('dateRange', e.target.value)}>
+              <option value="">All Dates</option>
+              <option value="today">Today</option>
+              <option value="3days">Last 3 Days</option>
+              <option value="week">Last 7 Days</option>
+            </select>
+            <button className={`filter-clear ${hasFilters ? 'visible' : ''}`}
+              onClick={() => onFilterChange('clear')}>
+              Clear
+            </button>
+          </div>
           <div className="ticket-list">
-            {tickets.map(t => (
+            {filtered.length === 0 && (
+              <div style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '0.88rem' }}>
+                No complaints match the selected filters.
+              </div>
+            )}
+            {filtered.map(t => (
               <div key={t.id} className={`ticket-item ${t.id === selectedId ? 'active' : ''}`} onClick={() => onSelect(t.id)}>
                 <div className={`status-dot ${t.status}`}></div>
                 <div className="ticket-info">
@@ -1567,6 +1835,7 @@
                   <div className="ticket-meta">
                     <span className="ticket-date">{formatDate(t.date)}</span>
                     <span className={`ticket-status-badge ${t.status}`}>{t.status.replace('-', ' ')}</span>
+                    {t.urgency && <span className={`urgency-badge ${t.urgency}`}>{t.urgency}</span>}
                   </div>
                 </div>
               </div>
@@ -1584,10 +1853,54 @@
       const [tickets, setTickets] = useState(MOCK_TICKETS);
       const [selectedId, setSelectedId] = useState('CMP-2026-0041');
       const [view, setView] = useState('detail');  // 'list' | 'detail' | 'new'
+      const [filters, setFilters] = useState({ status: '', urgency: '', contractor: '', dateRange: '' });
+
+      const handleFilterChange = useCallback((key, value) => {
+        if (key === 'clear') {
+          setFilters({ status: '', urgency: '', contractor: '', dateRange: '' });
+        } else {
+          setFilters(prev => ({ ...prev, [key]: value }));
+        }
+      }, []);
 
       const handleSelectTicket = useCallback((id) => {
         setSelectedId(id);
         setView('detail');
+      }, []);
+
+      const handleCloseTicket = useCallback((id) => {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        setTickets(prev => prev.map(t => t.id === id ? {
+          ...t,
+          status: 'closed',
+          messages: [...t.messages, {
+            type: 'system',
+            variant: 'connected',
+            title: 'Case Closed',
+            icon: 'check',
+            text: 'This case has been reviewed and closed by the administrator.',
+            time: timeStr,
+          }],
+        } : t));
+      }, []);
+
+      const handleEscalateTicket = useCallback((id) => {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        setTickets(prev => prev.map(t => t.id === id ? {
+          ...t,
+          status: 'escalated',
+          urgency: 'high',
+          messages: [...t.messages, {
+            type: 'system',
+            variant: 'forwarded',
+            title: 'Case Escalated',
+            icon: 'forward',
+            text: 'This case has been escalated to a supervisor for priority review and resolution.',
+            time: timeStr,
+          }],
+        } : t));
       }, []);
 
       const handleNewTicket = useCallback((data) => {
@@ -1600,6 +1913,7 @@
           photo: null,
           date: data.date,
           status: 'open',
+          urgency: 'medium',
           lat: 29.95 + (Math.random() - 0.5) * 0.06,
           lng: -90.07 + (Math.random() - 0.5) * 0.06,
           assignedTo: null,
@@ -1656,6 +1970,8 @@
                 <ChatView
                   ticket={selectedTicket}
                   onBack={() => setView('list')}
+                  onClose={handleCloseTicket}
+                  onEscalate={handleEscalateTicket}
                 />
               ) : (
                 <TicketList
@@ -1663,6 +1979,8 @@
                   selectedId={selectedId}
                   onSelect={handleSelectTicket}
                   onNewTicket={() => setView('new')}
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
                 />
               )}
             </div>
