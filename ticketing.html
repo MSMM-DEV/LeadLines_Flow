@@ -136,7 +136,7 @@
     }
 
     .map-container {
-      flex: 6;
+      flex: 5;
       position: relative;
       min-width: 0;
     }
@@ -148,9 +148,9 @@
 
     /* ─── Side Panel ──────────────────────────────────────── */
     .side-panel {
-      flex: 4;
-      min-width: 360px;
-      max-width: 600px;
+      flex: 5;
+      min-width: 400px;
+      max-width: 700px;
       background: var(--bg-card);
       border-left: 1px solid var(--border);
       display: flex;
@@ -728,6 +728,47 @@
       color: #512DA8;
     }
 
+    .ai-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #7C4DFF, #536DFE);
+      color: #fff;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .ai-tag svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    .ai-tag-body {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #EDE7F6, #E8EAF6);
+      color: #512DA8;
+      margin-bottom: 8px;
+    }
+
+    .ai-tag-body svg {
+      width: 12px;
+      height: 12px;
+    }
+
     .system-card-header.info {
       background: var(--info-bg);
       color: var(--primary);
@@ -764,6 +805,15 @@
       object-fit: cover;
       flex-shrink: 0;
       border: 1px solid var(--border);
+    }
+
+    .system-card-body .forwarded-photo {
+      width: 100%;
+      max-height: 160px;
+      object-fit: cover;
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
     }
 
     .ai-summary-text {
@@ -1164,6 +1214,7 @@
             title: 'Complaint Received',
             icon: 'check',
             text: 'We have received your complaint and our AI has analyzed the uploaded photo. We will work to resolve this issue promptly.',
+            aiGenerated: true,
             time: '11:01 AM',
           },
           {
@@ -1178,9 +1229,11 @@
           {
             type: 'system',
             variant: 'forwarded',
-            title: 'Forwarded to Contractor',
+            title: 'Forwarded to Contractor — Mike Reynolds',
             icon: 'forward',
-            text: 'Your complaint and the AI analysis summary have been forwarded to the assigned contractor, Mike Reynolds, for resolution.',
+            text: 'Hi Mike, a complaint has been filed by Stuart Seiler at 6269 Colbert St regarding incomplete restoration after a lead pipe inspection. The customer reports that the frontyard was excavated but never restored to its original condition, leaving visible holes and uneven terrain. Please review the attached photo and AI analysis below and schedule a site visit to restore the yard. This is marked as high urgency.',
+            photo: 'photos/IMG_7549.jpg',
+            aiSummary: 'The image shows a residential frontyard with two visible excavation holes in the grass near a utility access point. The surrounding lawn has soil displacement and uneven ground consistent with heavy equipment use. Restoration work — including backfill, grading, and re-sodding — is required.',
             time: '11:03 AM',
           },
           {
@@ -1260,9 +1313,10 @@
           {
             type: 'system',
             variant: 'forwarded',
-            title: 'Forwarded to Contractor',
+            title: 'Forwarded to Contractor — Carlos Martinez',
             icon: 'forward',
-            text: 'Your complaint has been forwarded to Carlos Martinez (Cleanup Crew Lead) for immediate resolution.',
+            text: 'Hi Carlos, a complaint has been filed by James Whitfield at 1525 General Taylor St. The customer reports that a lead pipe replacement crew left debris and construction materials on the street, partially blocking the sidewalk. This has persisted for 3 days. Please dispatch your cleanup crew to clear all materials and restore full pedestrian access. Marked as high urgency.',
+            aiSummary: 'Based on the complaint description, construction debris including pipe segments, soil, and equipment remains are obstructing the sidewalk and street frontage at the reported address. A full cleanup with sidewalk clearance is needed.',
             time: '2:20 PM',
           },
           {
@@ -1326,9 +1380,10 @@
           {
             type: 'system',
             variant: 'forwarded',
-            title: 'Forwarded to Specialist',
+            title: 'Forwarded to Specialist — Tom Henderson',
             icon: 'forward',
-            text: 'Your complaint has been forwarded to Tom Henderson (Plumbing Specialist).',
+            text: 'Hi Tom, a complaint has been filed by Patricia Adams at 2215 N Galvez St regarding reduced water pressure following recent water line work. The customer reports that all faucets in the house are affected and the issue began immediately after the service work was completed. Please inspect the line for any partially closed valves or connection issues.',
+            aiSummary: 'Post-service pressure drop across all fixtures suggests a main shut-off valve may not have been fully reopened, or there may be a restriction at the new service connection point. On-site pressure test recommended.',
             time: '8:15 AM',
           },
           {
@@ -1539,6 +1594,9 @@
     /* ═══════════════════════════════════════════════════════════
        SYSTEM MESSAGE CARD
        ═══════════════════════════════════════════════════════════ */
+    const AITagSmall = () => <span className="ai-tag"><IconAI /> AI Generated</span>;
+    const AITagBody = () => <div className="ai-tag-body"><IconAI /> AI Generated Message</div>;
+
     function SystemCard({ msg }) {
       const icons = {
         check: <IconCheck />,
@@ -1546,17 +1604,25 @@
         forward: <IconForward />,
         connected: <IconConnect />,
       };
+      const isAI = msg.aiGenerated || msg.variant === 'ai' || (msg.variant === 'forwarded' && (msg.aiSummary || msg.photo));
       return (
         <div className="msg system" style={{ animationDelay: '0.1s' }}>
           <div className="system-card">
             <div className={`system-card-header ${msg.variant}`}>
               {icons[msg.icon]}
               <span>{msg.title}</span>
+              {isAI && <AITagSmall />}
               <span style={{ flex: 1 }}></span>
               <span className="msg-time">{msg.time}</span>
             </div>
             <div className="system-card-body">
-              {msg.variant === 'ai' && msg.photo ? (
+              {isAI && msg.variant !== 'ai' && <AITagBody />}
+              {msg.variant === 'forwarded' && msg.photo ? (
+                <>
+                  <img src={msg.photo} alt="Attached" className="forwarded-photo" />
+                  <div style={{ fontSize: '0.85rem', lineHeight: 1.6 }}>{msg.text}</div>
+                </>
+              ) : msg.variant === 'ai' && msg.photo ? (
                 <div className="ai-summary">
                   <img src={msg.photo} alt="Analysis" className="ai-summary-thumb" />
                   <div className="ai-summary-text">
@@ -1564,7 +1630,15 @@
                     {msg.text}
                   </div>
                 </div>
+              ) : msg.variant === 'forwarded' && msg.aiSummary ? (
+                <div style={{ fontSize: '0.85rem', lineHeight: 1.6 }}>{msg.text}</div>
               ) : msg.text}
+              {msg.aiSummary && (
+                <div style={{ marginTop: 10, padding: '10px 12px', background: '#F3F0FA', borderRadius: 'var(--radius-xs)', fontSize: '0.82rem', lineHeight: 1.55, color: '#512DA8' }}>
+                  <strong style={{ display: 'block', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 3 }}>AI Analysis Attached</strong>
+                  {msg.aiSummary}
+                </div>
+              )}
             </div>
           </div>
         </div>
