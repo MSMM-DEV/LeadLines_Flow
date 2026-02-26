@@ -133,10 +133,11 @@
       flex: 1;
       display: flex;
       overflow: hidden;
+      position: relative;
     }
 
     .map-container {
-      flex: 5;
+      flex: 1;
       position: relative;
       min-width: 0;
     }
@@ -146,13 +147,47 @@
       height: 100%;
     }
 
+    /* ─── Resize Handle ───────────────────────────────────── */
+    .resize-handle {
+      width: 6px;
+      cursor: col-resize;
+      background: var(--border);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+      transition: background 0.15s;
+    }
+
+    .resize-handle:hover,
+    .resize-handle.dragging {
+      background: var(--primary-light);
+    }
+
+    .resize-handle::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 32px;
+      border-radius: 2px;
+      background: var(--text-light);
+      opacity: 0.5;
+      transition: opacity 0.15s;
+    }
+
+    .resize-handle:hover::after,
+    .resize-handle.dragging::after {
+      opacity: 1;
+      background: var(--primary);
+    }
+
     /* ─── Side Panel ──────────────────────────────────────── */
     .side-panel {
-      flex: 5;
-      min-width: 400px;
-      max-width: 700px;
+      width: 50%;
+      flex-shrink: 0;
       background: var(--bg-card);
-      border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -1505,7 +1540,7 @@
     /* ═══════════════════════════════════════════════════════════
        MAP COMPONENT
        ═══════════════════════════════════════════════════════════ */
-    function TicketMap({ tickets, selectedId, onSelectTicket }) {
+    function TicketMap({ tickets, selectedId, onSelectTicket, mapRef: externalMapRef }) {
       const mapRef = useRef(null);
       const mapInstanceRef = useRef(null);
       const markersRef = useRef({});
@@ -1516,6 +1551,7 @@
         // Center on Orleans Parish
         const map = L.map(mapRef.current).setView([29.9511, -90.0715], 12);
         mapInstanceRef.current = map;
+        if (externalMapRef) externalMapRef.current = map;
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
           attribution: 'Esri',
@@ -1923,11 +1959,65 @@
     /* ═══════════════════════════════════════════════════════════
        APP (root)
        ═══════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════
+       RESIZE HANDLE
+       ═══════════════════════════════════════════════════════════ */
+    function ResizeHandle({ onResize }) {
+      const [dragging, setDragging] = useState(false);
+
+      const handleMouseDown = useCallback((e) => {
+        e.preventDefault();
+        setDragging(true);
+
+        const onMouseMove = (e) => {
+          onResize(e.clientX);
+        };
+
+        const onMouseUp = () => {
+          setDragging(false);
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        };
+
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      }, [onResize]);
+
+      return <div className={`resize-handle ${dragging ? 'dragging' : ''}`} onMouseDown={handleMouseDown} />;
+    }
+
+
     function App() {
       const [tickets, setTickets] = useState(MOCK_TICKETS);
       const [selectedId, setSelectedId] = useState('CMP-2026-0041');
       const [view, setView] = useState('detail');  // 'list' | 'detail' | 'new'
       const [filters, setFilters] = useState({ status: '', urgency: '', contractor: '', dateRange: '' });
+      const [panelWidth, setPanelWidth] = useState(50); // percentage
+      const layoutRef = useRef(null);
+      const mapRef = useRef(null);
+
+      const handleResize = useCallback((clientX) => {
+        const layout = layoutRef.current;
+        if (!layout) return;
+        const rect = layout.getBoundingClientRect();
+        const totalWidth = rect.width;
+        const panelPx = rect.right - clientX;
+        const pct = Math.round((panelPx / totalWidth) * 100);
+        // Clamp between 10% (min panel) and 90% (max panel)
+        setPanelWidth(Math.max(10, Math.min(90, pct)));
+      }, []);
+
+      // Invalidate Leaflet map size after resize so tiles fill correctly
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          if (mapRef.current) mapRef.current.invalidateSize();
+        }, 50);
+        return () => clearTimeout(timer);
+      }, [panelWidth]);
 
       const handleFilterChange = useCallback((key, value) => {
         if (key === 'clear') {
@@ -2029,12 +2119,14 @@
             </nav>
           </div>
 
-          <div className="main-layout">
+          <div className="main-layout" ref={layoutRef}>
             <div className="map-container">
-              <TicketMap tickets={tickets} selectedId={selectedId} onSelectTicket={handleSelectTicket} />
+              <TicketMap tickets={tickets} selectedId={selectedId} onSelectTicket={handleSelectTicket} mapRef={mapRef} />
             </div>
 
-            <div className="side-panel">
+            <ResizeHandle onResize={handleResize} />
+
+            <div className="side-panel" style={{ width: panelWidth + '%' }}>
               {view === 'new' ? (
                 <NewTicketForm
                   onCancel={() => setView(selectedId ? 'detail' : 'list')}
