@@ -1673,12 +1673,6 @@
               ) : msg.variant === 'forwarded' && msg.aiSummary ? (
                 <div style={{ fontSize: '0.85rem', lineHeight: 1.6 }}>{msg.text}</div>
               ) : msg.text}
-              {msg.aiSummary && (
-                <div style={{ marginTop: 10, padding: '10px 12px', background: '#F3F0FA', borderRadius: 'var(--radius-xs)', fontSize: '0.82rem', lineHeight: 1.55, color: '#512DA8' }}>
-                  <strong style={{ display: 'block', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 3 }}>AI Analysis Attached</strong>
-                  {msg.aiSummary}
-                </div>
-              )}
             </div>
           </div>
         </div>
